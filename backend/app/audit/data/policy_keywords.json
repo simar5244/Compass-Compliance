@@ -1,0 +1,11 @@
+[
+  {
+    "id": "sensitive_keywords",
+    "label": "Sensitive keywords",
+    "patterns": []
+  },
+  { "id": "texas_senate_bill_17", "label": "Texas Senate Bill 17", "patterns": ["senate bill 17", "SB 17", "SB17"] },
+  { "id": "find_accessibility", "label": "Find \"accessibility\"", "patterns": ["accessibility"] },
+  { "id": "eeo_terms", "label": "Identify Pages using EEO terms", "patterns": ["equal employment", "EEO", "equal opportunity employer"] },
+  { "id": "affirmative_action", "label": "Identify Pages using Affirmative Action terms", "patterns": ["affirmative action"] }
+]

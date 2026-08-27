@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WCT Fixtures — Targets</title>
+  <meta name="description" content="Undersized tap targets with exceptions.">
+  <style>
+    .crowded button { width:16px; height:16px; padding:0; margin:0; box-sizing:border-box; }
+    .isolated { margin-top:200px; }
+    .isolated button { width:10px; height:10px; padding:0; box-sizing:border-box; }
+  </style>
+</head>
+<body>
+  <h1>Targets fixture</h1>
+
+  <!-- THREE crowded 16px buttons, adjacent (centers 16px apart < 24px) -> all 3 flagged. -->
+  <div class="crowded">
+    <button aria-label="one"></button><button aria-label="two"></button><button aria-label="three"></button>
+  </div>
+
+  <!-- One isolated 10px button, far from any other target -> spacing exception, NOT flagged. -->
+  <div class="isolated">
+    <button aria-label="isolated"></button>
+  </div>
+
+  <!-- An inline link inside a paragraph -> inline exception, NOT flagged. -->
+  <p style="margin-top:200px;">Some text with an <a href="/index.html">inline link</a> in the flow.</p>
+</body>
+</html>

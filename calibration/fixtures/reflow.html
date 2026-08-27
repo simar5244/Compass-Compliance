@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WCT Fixtures — Reflow</title>
+  <meta name="description" content="Horizontal overflow at 320px.">
+</head>
+<body>
+  <h1>Reflow fixture</h1>
+  <!-- A fixed 900px-wide non-exempt block forces horizontal scrolling at 320px. -->
+  <div style="width:900px; background:#eee; padding:8px;">
+    This block is 900 CSS pixels wide and cannot reflow, so it overflows horizontally on a 320px viewport.
+  </div>
+</body>
+</html>

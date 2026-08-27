@@ -1,0 +1,20 @@
+node_modules
+.next
+.git
+.gitignore
+
+# Never bake local env files into an image — NEXT_PUBLIC_* values are inlined
+# into the client bundle at build time, so a stray .env.local would ship a
+# developer's localhost URL to production.
+.env
+.env.*
+!.env.example
+
+npm-debug.log*
+yarn-error.log*
+*.tsbuildinfo
+.DS_Store
+
+# Test/dev-only assets
+ss
+coverage

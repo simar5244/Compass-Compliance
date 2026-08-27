@@ -1,0 +1,19 @@
+.venv
+__pycache__
+**/__pycache__
+*.pyc
+.pytest_cache
+
+# Multi-GB scan output; regenerated at runtime into a volume.
+artifacts
+
+# Installed inside the image by npm ci.
+node/node_modules
+
+# Secrets: never bake local config into an image.
+.env
+.env.*
+!.env.example
+
+tests/__pycache__
+.DS_Store

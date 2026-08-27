@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WCT Fixtures — Focus</title>
+  <meta name="description" content="One control with no visible focus style.">
+  <style>
+    button.good:focus { outline: 3px solid #0044cc; }
+    /* The bad button explicitly removes any focus indicator. */
+    button.bad:focus { outline: none; }
+    button { width: 120px; height: 40px; margin: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Focus fixture</h1>
+  <button class="good">Has a focus outline</button>
+  <button class="bad">No focus outline</button>
+</body>
+</html>

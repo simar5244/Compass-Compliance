@@ -1,0 +1,6 @@
+{
+  "name": "wcag-scanner-lighthouse",
+  "private": true,
+  "description": "Isolated Lighthouse install for Group C performance checks (invoked as a subprocess)",
+  "dependencies": { "lighthouse": "^12.0.0" }
+}

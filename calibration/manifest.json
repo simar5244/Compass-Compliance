@@ -1,0 +1,48 @@
+{
+  "description": "Expected detection counts for the calibration fixture site. Per-page counts are what audit_page() detects on a single rendered page (all records for a rule_id, manual + non-manual). Cross-page counts require the finalize step (link checking, duplicate title/meta, and sitemap checks). Counts are exact ints, or {\"min\": n} where the exact number is inherently fuzzy (e.g. reflow offender nesting, focus sampling, axe incomplete/violation split).",
+  "audit_page": {
+    "contrast.html": {
+      "color-contrast": {
+        "min": 1
+      }
+    },
+    "images.html": {
+      "image-alt": 1,
+      "image-alt-content": 1
+    },
+    "headings.html": {
+      "heading-order-content": 1
+    },
+    "targets.html": {
+      "target-size": 3
+    },
+    "reflow.html": {
+      "reflow": {
+        "min": 1
+      }
+    },
+    "focus.html": {
+      "focus-visible": {
+        "min": 1
+      }
+    },
+    "privacy.html": {
+      "hsts": 1,
+      "privacy-policy-link": 1,
+      "trackers": {
+        "min": 1
+      }
+    },
+    "meta.html": {
+      "page-title": 1,
+      "meta_description_too_short": 1
+    }
+  },
+  "cross_page": {
+    "broken_links": 1,
+    "duplicate_title_pages": 2,
+    "sitemap_missing": 1,
+    "sitemap_malformed": 0,
+    "page_missing_from_sitemap": 0
+  }
+}

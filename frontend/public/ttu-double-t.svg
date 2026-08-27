@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 80" role="img" aria-label="Texas Tech Double T">
+  <!-- Vector recreation of the Texas Tech Double T mark -->
+  <path fill="#CC0000" d="M6 6h38v14H28v54H22V20H6V6z"/>
+  <path fill="#CC0000" d="M56 6h38v14H78v54H72V20H56V6z"/>
+  <path fill="#000000" d="M44 6h12v54H44V6z"/>
+</svg>

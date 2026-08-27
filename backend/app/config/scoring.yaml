@@ -1,0 +1,198 @@
+# Config-driven scoring model (Silktide-style). Weights live here, not in code,
+# so tuning the model never requires a code change.
+#
+# Model, per check (an axe rule, aggregated across the crawl):
+#   pct_affected   = pages with >=1 issue / pages scanned
+#   avg_issues     = impact-weighted issue count / pages scanned
+#   severity       = min(avg_issues / worst_value, 1.0)   # worst_value => 0 score
+#   check_score    = 100 * (1 - (blend.pct * pct_affected + blend.severity * severity))
+#   penalty        = (1 - check_score/100) * max_impact * level_weight
+# A category starts at 100 and subtracts the sum of its checks' penalties (clamped >= 0).
+
+version: 1
+scoring_standard: "2.2"   # WCAG 2.2 is the standard the Accessibility score is reported against
+
+# How a single check's score blends "how widespread" vs "how severe on affected pages".
+# A template defect (one footer link, one nav typo) appears on every page, so
+# pct_affected pins to 1.0 and, weighted at 0.6, cost most of the penalty before
+# severity was even considered — a single systemic mistake scored like the whole
+# site was broken. Density now leads; reach still matters but no longer dominates.
+blend:
+  pct: 0.35
+  severity: 0.65
+
+# Default per-check knobs; specific axe rules can override in `check_overrides`.
+check_defaults:
+  worst_value: 6.0     # impact-weighted issues/page that drives a check to score 0
+  max_impact: 12.0     # most points one check can remove from its category
+
+# Impact sub-weights: a "minor" issue counts less than a "critical" one toward avg_issues.
+impact_weights:
+  critical: 1.0
+  serious: 0.8
+  moderate: 0.5
+  minor: 0.3
+
+# WCAG level influence on the Accessibility score. AAA is capped low so AAA-only
+# failures can't dominate a 2.2 score; A and AA carry the weight.
+level_weights:
+  A: 1.0
+  AA: 1.0
+  AAA: 0.05
+  best-practice: 0.1
+
+# Per-rule overrides (optional) for ACCESSIBILITY checks (axe rules AND the
+# custom rendered-layout checks reflow / focus-visible / target-size). These
+# are level-weighted like every other accessibility check; their WCAG version/
+# level bucketing comes from the criterion catalog (1.4.10, 2.4.7, 2.5.8).
+check_overrides:
+  color-contrast:
+    max_impact: 15.0
+  image-alt:
+    max_impact: 15.0
+  link-name:
+    worst_value: 5.0
+  reflow:
+    worst_value: 3.0
+    max_impact: 14.0
+  focus-visible:
+    worst_value: 6.0
+    max_impact: 14.0
+  target-size:
+    worst_value: 8.0
+    max_impact: 12.0
+
+# Quality checks (content / marketing / ux). Each declares the category and
+# subcategory it feeds plus its own worst_value/max_impact. worst_value is the
+# impact-weighted issues-per-page that drives the check to score 0.
+quality_checks:
+  sitemap_missing:       { category: marketing, subcategory: "Technical optimization", worst_value: 1.0, max_impact: 10.0, assisted: false }
+  sitemap_malformed:     { category: marketing, subcategory: "Technical optimization", worst_value: 1.0, max_impact: 5.0, assisted: false }
+  page_missing_from_sitemap: { category: marketing, subcategory: "Technical optimization", worst_value: 1.0, max_impact: 0.0, assisted: true }
+  broken-links:          { category: content,   subcategory: Links,     worst_value: 12.0,  max_impact: 12.0 }
+  spelling:              { category: content,   subcategory: Writing,   worst_value: 15.0,  max_impact: 12.0 }
+  grammar:               { category: content,   subcategory: Grammar,   worst_value: 80.0, max_impact: 10.0 }
+  readability:           { category: content,   subcategory: Writing,   worst_value: 1.0,  max_impact: 10.0 }
+  page-title:            { category: content,   subcategory: "Page information", worst_value: 1.0, max_impact: 15.0 }
+  # Group B sub-batch 2 (scored). Assisted B2 checks (structured-data, url-underscores,
+  # table-summary, favicons, link-no-text, broken-anchor-links) carry manual_review=True.
+  placeholder_links:     { category: content,   subcategory: "Broken links",           worst_value: 10.0, max_impact: 5.0 }
+  url_file_extension:    { category: marketing, subcategory: "Technical optimization", worst_value: 50.0, max_impact: 5.0 }
+  thin_pages:            { category: content,   subcategory: "Content SEO",             worst_value: 10.0, max_impact: 6.0 }
+  title_too_long:        { category: marketing, subcategory: "Content optimization",    worst_value: 50.0, max_impact: 5.0 }
+  multiple_h1:           { category: content,   subcategory: "Content SEO",             worst_value: 10.0, max_impact: 5.0 }
+  meta_description_too_short: { category: content, subcategory: "Page information", worst_value: 1.0, max_impact: 10.0 }
+  new_tab_disclosure:    { category: content,   subcategory: Links, worst_value: 10.0, max_impact: 5.0 }
+  # Group C — Lighthouse performance checks (scored; empty unless enable_lighthouse).
+  # These are 21 checks that ALL land in ux/Web Vitals, so they compound: with
+  # Lighthouse enabled they took ux from 91 to 53 on their own. Each is capped
+  # at half the weight of a standalone check so the family informs the score
+  # without dominating the category.
+  render_blocking_resources: { category: ux, subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 4.0 }
+  unused_javascript:      { category: ux,       subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 4.0 }
+  unused_css:             { category: ux,       subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 4.0 }
+  legacy_javascript:      { category: ux,       subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 3.0 }
+  third_party_impact:     { category: ux,       subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 4.0 }
+  long_main_thread_tasks: { category: ux,       subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 4.0 }
+  cache_ttl:              { category: ux,       subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 3.0 }
+  font_display:           { category: ux,       subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 3.0 }
+  unminified_css:         { category: ux,       subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 3.0 }
+  unminified_javascript:  { category: ux,       subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 3.0 }
+  preconnect_missing:     { category: ux,       subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 2.5 }
+  high_rtt:               { category: ux,       subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 2.5 }
+  js_execution_time:      { category: ux,       subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 4.0 }
+  defer_offscreen_images: { category: ux,       subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 4.0 }
+  image_modern_format:    { category: ux,       subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 3.0 }
+  image_resolution:       { category: ux,       subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 3.0 }
+  image_optimization:     { category: content,  subcategory: "Images",       worst_value: 50.0, max_impact: 8.0 }
+  passive_event_listeners: { category: ux,      subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 2.0 }
+  excessive_dom_size:     { category: ux,       subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 3.0 }
+  total_page_weight:      { category: ux,       subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 4.0 }
+  time_to_interactive:    { category: ux,       subcategory: "Web Vitals",   worst_value: 50.0, max_impact: 3.0 }
+  missing_js_files:       { category: ux,       subcategory: "Functionality", worst_value: 20.0, max_impact: 8.0 }
+  missing_css_files:      { category: ux,       subcategory: "Functionality", worst_value: 20.0, max_impact: 8.0 }
+  image-alt-content:     { category: content,   subcategory: Images,    worst_value: 5.0,  max_impact: 15.0 }
+  heading-order-content: { category: ux,        subcategory: Structure, worst_value: 3.0,  max_impact: 12.0 }
+  # Group A — HTTP header / response checks
+  csp_missing:           { category: privacy,   subcategory: Security,   worst_value: 100.0, max_impact: 10.0 }
+  cookie_ssl:            { category: privacy,   subcategory: Security,   worst_value: 100.0, max_impact: 10.0 }
+  privacy_enhanced:      { category: privacy,   subcategory: Security,   worst_value: 100.0, max_impact: 10.0 }
+  # A5 (TTFB) is one measurement per visit — flag it but weight it light so a
+  # single slow/cold CDN response can't tank the UX score.
+  server_response_time:  { category: ux,        subcategory: "Web Vitals", worst_value: 30.0, max_impact: 2.5 }
+  # Privacy (scored, modest weights)
+  hsts:                  { category: privacy,   subcategory: Transport,  worst_value: 1.0,  max_impact: 10.0 }
+  privacy-policy-link:   { category: privacy,   subcategory: Disclosure, worst_value: 1.0,  max_impact: 10.0 }
+  cookie-consent:        { category: privacy,   subcategory: Consent,    worst_value: 100.0, max_impact: 10.0 }
+  trackers:              { category: privacy,   subcategory: Tracking,   worst_value: 3.0,  max_impact: 5.0 }
+  # Group B sub-batch 1 (scored). Assisted B-checks (forms/phone/email/js-logs)
+  # carry manual_review=True and are excluded from scoring, so they need no entry.
+  cookies_review:        { category: privacy,   subcategory: Consent,       worst_value: 100.0, max_impact: 10.0 }
+  missing_images:        { category: ux,        subcategory: Functionality, worst_value: 20.0,  max_impact: 8.0 }
+  javascript_errors:     { category: ux,        subcategory: Functionality, worst_value: 50.0,  max_impact: 8.0 }
+  # Policies + Inventory are informational for single-page instant scans
+  policy-privacy:        { category: policies,  subcategory: Legal,      worst_value: 1.0,  max_impact: 10.0 }
+  policy-cookie:         { category: policies,  subcategory: Legal,      worst_value: 1.0,  max_impact: 10.0 }
+  technology:            { category: inventory, subcategory: Tech,       worst_value: 1.0,  max_impact: 0.0 }
+  accessibility_statement_present: { category: "TTU Compliance", subcategory: "ADA / Section 508", worst_value: 100.0, max_impact: 20.0, assisted: false }
+  accessibility_statement_contact: { category: "TTU Compliance", subcategory: "ADA / Section 508", worst_value: 100.0, max_impact: 0.0, assisted: true }
+  alternative_format_process: { category: "TTU Compliance", subcategory: "ADA / Section 508", worst_value: 100.0, max_impact: 0.0, assisted: true }
+  sb17_context_aware: { category: "TTU Compliance", subcategory: "Senate Bill 17", worst_value: 100.0, max_impact: 0.0, assisted: true }
+  ferpa_student_id_exposure: { category: "TTU Compliance", subcategory: FERPA, worst_value: 100.0, max_impact: 0.0, assisted: true }
+  ferpa_grade_exposure: { category: "TTU Compliance", subcategory: FERPA, worst_value: 100.0, max_impact: 0.0, assisted: true }
+  ferpa_directory_info: { category: "TTU Compliance", subcategory: FERPA, worst_value: 100.0, max_impact: 0.0, assisted: true }
+  emergency_info_linked: { category: "TTU Compliance", subcategory: "Emergency Info", worst_value: 100.0, max_impact: 10.0, assisted: false }
+  emergency_contact_present: { category: "TTU Compliance", subcategory: "Emergency Info", worst_value: 100.0, max_impact: 5.0, assisted: false }
+  stale_content: { category: "TTU Compliance", subcategory: "Content Health", worst_value: 100.0, max_impact: 0.0, assisted: true }
+  outdated_year_reference: { category: "TTU Compliance", subcategory: "Content Health", worst_value: 100.0, max_impact: 0.0, assisted: true }
+  former_staff_reference: { category: "TTU Compliance", subcategory: "Content Health", worst_value: 100.0, max_impact: 0.0, assisted: true }
+  brand_unapproved_colors: { category: "Brand Standards", subcategory: Colors, worst_value: 50.0, max_impact: 0.0, assisted: true }
+  brand_unapproved_fonts: { category: "Brand Standards", subcategory: Typography, worst_value: 50.0, max_impact: 0.0, assisted: true }
+  brand_logo_present: { category: "Brand Standards", subcategory: "Logo Usage", worst_value: 100.0, max_impact: 15.0, assisted: false }
+  brand_button_consistency: { category: "Brand Standards", subcategory: "Buttons & Components", worst_value: 50.0, max_impact: 0.0, assisted: true }
+  brand_cms_detected: { category: "Brand Standards", subcategory: "CMS Integration", worst_value: 100.0, max_impact: 0.0, assisted: true }
+
+# A page that rendered only an error message scores no higher than this, regardless
+# of how few issues axe found on the near-empty error page.
+penalty_overrides:
+  error_page_max_score: 5
+
+# Display bands for a 0-100 score.
+bands:
+  - { max: 29, label: "Very poor" }
+  - { max: 49, label: "Poor" }
+  - { max: 59, label: "Fair" }
+  - { max: 79, label: "Good" }
+  - { max: 89, label: "Great" }
+  - { max: 100, label: "Excellent" }
+
+# Category catalog. Phase 1 populates Accessibility; the others are declared so the
+# tree and Overall (mean of categories) are stable as later phases add checks.
+categories:
+  accessibility:
+    label: "Accessibility"
+    active: true
+  content:
+    label: "Content"
+    active: true
+  marketing:
+    label: "Marketing"
+    active: true
+  ux:
+    label: "User Experience"
+    active: true
+  privacy:
+    label: "Privacy"
+    active: true
+  policies:
+    label: "Policies"
+    active: false   # single-page instant scans can't fully judge site-wide policies
+  inventory:
+    label: "Inventory"
+    active: false   # informational only, never scored
+  "TTU Compliance":
+    label: "TTU Compliance"
+    active: false   # compliance status is reported separately from the 0-100 score
+  "Brand Standards":
+    label: "Brand Standards"
+    active: true

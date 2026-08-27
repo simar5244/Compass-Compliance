@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WCT Fixtures — Home</title>
+  <meta name="description" content="Calibration fixture hub page.">
+</head>
+<body>
+  <h1>Calibration fixtures</h1>
+  <p>A small static site with precisely known defects, used to regression-test the scanner.</p>
+  <nav>
+    <ul>
+      <li><a href="/contrast.html">Contrast</a></li>
+      <li><a href="/images.html">Images</a></li>
+      <li><a href="/headings.html">Headings</a></li>
+      <li><a href="/targets.html">Targets</a></li>
+      <li><a href="/reflow.html">Reflow</a></li>
+      <li><a href="/focus.html">Focus</a></li>
+      <li><a href="/privacy.html">Privacy</a></li>
+      <li><a href="/meta.html">Meta</a></li>
+      <li><a href="/duplicate.html">Duplicate title</a></li>
+    </ul>
+  </nav>
+  <!-- Exactly one broken external link (.invalid never resolves, deterministic offline). -->
+  <p><a href="http://broken.invalid/dead">This link is intentionally broken</a></p>
+</body>
+</html>

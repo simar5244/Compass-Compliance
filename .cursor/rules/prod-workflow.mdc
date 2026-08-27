@@ -1,0 +1,33 @@
+---
+description: Pre-prod tracking, frontend-only scope, and prod testing before push
+alwaysApply: true
+---
+
+# Production workflow
+
+## Before every push
+
+1. Read **`UPDATE.md`** at the repo root.
+2. Remove or revert anything listed there as “remove before prod.”
+3. Do not commit `.env`, `backend/.env`, or `docker-compose.override.yml` unless the team explicitly wants them in repo (they should not).
+
+## Scope for current work
+
+- **Only edit `frontend/**`** (UI, styling, layout).
+- Do **not** change `backend/**`, API routes, `frontend/next.config.ts` rewrites, or `frontend/lib/api*.ts` / `auth.ts` unless the user overrides.
+
+## Local development
+
+- Work desktop: **virtualization enabled** — Docker can run the full stack locally.
+- Backend stack: `docker compose up postgres redis backend worker -d` (from repo root; ensure Docker Desktop is running).
+- Frontend hot reload: `npm run dev` in `frontend/` (do not use the compose `frontend` service during UI work).
+- Still run the **staging checklist** in `UPDATE.md` before production push.
+
+## When adding local-only files
+
+- Log them in **`UPDATE.md`** (path, purpose, remove before prod?).
+- Never add secrets to git.
+
+## Prod testing (required before production push)
+
+Follow the checklist in **`UPDATE.md` § Production testing plan**: build frontend locally → deploy staging → full smoke test → then prod deploy + smoke test.

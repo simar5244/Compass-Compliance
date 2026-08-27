@@ -1,0 +1,102 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: wcag
+      POSTGRES_PASSWORD: wcag
+      POSTGRES_DB: wcag_scanner
+    ports:
+      - "55433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wcag -d wcag_scanner"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6381:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI. Serves the API; does no crawling itself.
+  backend: &backend
+    build:
+      context: ./backend
+    image: wcag-backend:compass
+    restart: unless-stopped
+    # Chromium keeps render surfaces in shared memory. Docker's 64MB default is
+    # far too small: the tab dies mid-run ("Browser tab has unexpectedly
+    # crashed"), which surfaces as missing web vitals and can kill page renders
+    # on heavy pages.
+    shm_size: 1gb
+    environment:
+      DATABASE_URL: postgresql+asyncpg://wcag:wcag@postgres:5432/wcag_scanner
+      REDIS_URL: redis://redis:6379/0
+      ARTIFACT_DIR: /data/artifacts
+      # Must match the frontend basePath so the session cookie is not offered
+      # to other apps on the same domain.
+      SESSION_COOKIE_PATH: ${SESSION_COOKIE_PATH:-/compass}
+      # Deployment is behind TLS; keep the session token off plaintext.
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-1}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Lighthouse adds ~10-15s per page, so it is off in the app's defaults for
+      # local runs and on for this deployment, where the image already carries
+      # Chromium and the Lighthouse CLI. Set to 0 to turn it off here too.
+      ENABLE_LIGHTHOUSE: ${ENABLE_LIGHTHOUSE:-1}
+    volumes:
+      - artifacts:/data/artifacts
+    # Not published to the host: only the frontend container needs to reach it,
+    # over the compose network. This is what keeps the API off the public
+    # interface without a firewall rule.
+    expose:
+      - "8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Same image, different process. The worker is what actually crawls and
+  # scores — without it, scans queue forever and the dashboard stays empty.
+  worker:
+    <<: *backend
+    command: ["arq", "app.worker.WorkerSettings"]
+    expose: []
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Both are BUILD arguments: Next inlines NEXT_PUBLIC_* into the client
+        # bundle and freezes the rewrite destination into routes-manifest.json.
+        # Setting either at runtime has no effect — rebuild to change them.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?set NEXT_PUBLIC_API_URL, e.g. /compass/api}
+        BACKEND_API_URL: ${BACKEND_API_URL:-http://backend:8001}
+    restart: unless-stopped
+    environment:
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+    ports:
+      # Loopback only: nginx terminates TLS and proxies to it.
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  artifacts:

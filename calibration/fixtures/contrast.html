@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WCT Fixtures — Contrast</title>
+  <meta name="description" content="One low-contrast paragraph.">
+</head>
+<body>
+  <h1>Contrast fixture</h1>
+  <!-- One clearly-failing contrast: #a0a0a0 on #ffffff is ~2.6:1 (< 4.5:1). -->
+  <p style="color:#a0a0a0; background:#ffffff;">This grey text fails the minimum contrast requirement.</p>
+  <p style="color:#000000; background:#ffffff;">This black text passes and must not be flagged.</p>
+</body>
+</html>
